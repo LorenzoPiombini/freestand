@@ -14,7 +14,7 @@ I also use ***memset memcpy*** quite a bit, and if I want to achive my goal to m
 executable, I have to rewrite all of these routines, which is also part of the fun. 
 
 I've started with an implementation of ***memcpy** and ***memset*** which i renamed:
-- copy_to_memory()
+- copy_memory()
 - set_memory() 
 
 the name is different from the original libc functions
