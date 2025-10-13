@@ -21,7 +21,7 @@ the name is different from the original libc functions
 because i want to avoid to get yelled at by gcc compiler.
 
 I will implement string functionalities and maybe a string struct to make easy string handling in C, 
-I have written a draft of such a thing in the [str_op.c] (https://github.com/LorenzoPiombini/Database/blob/main/src/str_op.c) file for the database utility.
+I have written a draft of such a thing in the [str_op.c](https://github.com/LorenzoPiombini/Database/blob/main/src/str_op.c) file for the database utility.
 
 
 
