@@ -107,5 +107,54 @@ int copy_memory(void *dest, void *src, size_t size)
 	return 0;
 }
 
+/* STRING HANDLEING */
+int init(struct String *str,const char *val)
+{
+	if(!str) return -1;
+	if(str->base[0] != '\0' || str->str){
+		fprintf(stderr,"(%s): string has been already initialized",prog);
+		return -1;
+	}
+	
+	if(!val){
+		memset(str->base,0,DEF_STR);
+		str->str = 0x0;
+		str->append = append;
+		str->is_empty = empty;
+		str->close = free_str;
+		str->size = 0;
+		return 0;
+	}
+
+	int i;
+	char *p = str;
+	for(i = 0; *p != '\0'; i++,p++);
+
+	str->size = i;
+	if(str->size >= DEF_STR){
+		errno = 0;
+		str->str = (char*)ask_mem((str->size)*sizeof(char));
+		if(!str->str){
+			fprintf(stderr,"(%s): ask_mem failed, %s:%d\n",prog, __FILE__,__LINE__-2);	
+			return -1;
+		}
+		memset(str->str,0,str->size);
+		for(i = 0; i < str->size;i++)
+			str->str[i] = val[i];
+
+		str->append = append;
+		str->is_empty = empty;
+		str->allocated |= SET_ON;
+		str->close = free_str;
+		memset(str->base,0,DEF_STR);
+		return 0;
+	}
+	for(i = 0; i < str->size;i++)
+		str->base[i] = val[i];
+	str->append = append;
+	str->is_empty = empty;
+	str->close = free_str;
+	return 0;
+}
 
 

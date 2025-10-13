@@ -47,6 +47,17 @@ typedef 	long long		process_id;
 #  endif
 
 
+struct String{
+	char base[DEF_STR];
+	char *str;	
+	size_t size;
+	int (*append)(struct String*,const char *);
+	uint8_t (*is_empty)(struct String*);
+	void (*close)(struct String*);
+};
+
+int init(struct String *str,const char *val);
+
 /* memset alias */
 void set_memory(void *ptr,int value, size_t size);
 
