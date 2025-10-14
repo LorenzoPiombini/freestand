@@ -1,6 +1,15 @@
 #ifndef _FREESTAND_H
 #define _FREESTAND_H
 
+/* I/O */
+#if defined(__linux__)
+#define std_out 1
+#define std_err 2
+#elif defined(_WIN32)
+
+#endif
+
+/* TYPES */ 
 typedef 	char			int8_t;
 typedef 	unsigned char	uint8_t;
 typedef 	unsigned short	uint16_t;
@@ -37,7 +46,7 @@ typedef 	long long		process_id;
 #   define LONG_MAX	2147483647L
 #endif
 
-#  define LONG_MIN	(-LONG_MAX - 1L)
+#define LONG_MIN	(-LONG_MAX - 1L)
 
 /* unsigned long max  (Minimum is 0.)  */
 #  if __WORDSIZE == 64
@@ -46,17 +55,20 @@ typedef 	long long		process_id;
 #   define ULONG_MAX	4294967295UL
 #  endif
 
+#define DEF_STR 1024
 
 struct String{
 	char base[DEF_STR];
 	char *str;	
 	size_t size;
-	int (*append)(struct String*,const char *);
+	int (*append)(struct String*,char *);
 	uint8_t (*is_empty)(struct String*);
 	void (*close)(struct String*);
 };
 
-int init(struct String *str,const char *val);
+int init(struct String *str,char *val);
+void string_copy(char *dest, char *src, size_t size);
+size_t string_length(char *str);
 
 /* memset alias */
 void set_memory(void *ptr,int value, size_t size);
@@ -64,4 +76,5 @@ void set_memory(void *ptr,int value, size_t size);
 /* memcpy alias */
 int copy_memory(void *dest, void* src, size_t size);
 
+size_t sys_write(int fd, void *buffer, size_t size);
 #endif

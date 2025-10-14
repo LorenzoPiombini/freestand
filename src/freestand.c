@@ -1,4 +1,11 @@
+#include <stdio.h> /*temporary*/
 #include "freestand.h"
+#include "memory.h"
+
+/*static functions to manage String struct*/
+static void free_str(struct String *str);
+static uint8_t empty(struct String *str);
+static int append(struct String *str,char *str_to_appen);
 
 void set_memory(void *ptr,int value, size_t size)
 {
@@ -108,16 +115,16 @@ int copy_memory(void *dest, void *src, size_t size)
 }
 
 /* STRING HANDLEING */
-int init(struct String *str,const char *val)
+int init(struct String *str,char *val)
 {
 	if(!str) return -1;
 	if(str->base[0] != '\0' || str->str){
-		fprintf(stderr,"(%s): string has been already initialized",prog);
+		fprintf(stderr,"string has been already initialized\n");
 		return -1;
 	}
 	
 	if(!val){
-		memset(str->base,0,DEF_STR);
+		set_memory(str->base,0,DEF_STR);
 		str->str = 0x0;
 		str->append = append;
 		str->is_empty = empty;
@@ -127,26 +134,25 @@ int init(struct String *str,const char *val)
 	}
 
 	int i;
-	char *p = str;
+	char *p = val;
 	for(i = 0; *p != '\0'; i++,p++);
 
 	str->size = i;
 	if(str->size >= DEF_STR){
-		errno = 0;
 		str->str = (char*)ask_mem((str->size)*sizeof(char));
 		if(!str->str){
-			fprintf(stderr,"(%s): ask_mem failed, %s:%d\n",prog, __FILE__,__LINE__-2);	
+			fprintf(stderr,"ask_mem failed, %s:%d\n",__FILE__,__LINE__-2);	
 			return -1;
 		}
-		memset(str->str,0,str->size);
+
+		set_memory(str->str,0,str->size);
 		for(i = 0; i < str->size;i++)
 			str->str[i] = val[i];
 
 		str->append = append;
 		str->is_empty = empty;
-		str->allocated |= SET_ON;
 		str->close = free_str;
-		memset(str->base,0,DEF_STR);
+		set_memory(str->base,0,DEF_STR);
 		return 0;
 	}
 	for(i = 0; i < str->size;i++)
@@ -157,4 +163,90 @@ int init(struct String *str,const char *val)
 	return 0;
 }
 
+void string_copy(char *dest, char *src, size_t size)
+{
+	int i;
+	for(i = 0; i < size;i++)
+		dest[i] = src[i];
+}
 
+size_t string_length(char *str)
+{
+	size_t i;
+	char *p = str;
+	for(i = 0; *p != '\0'; i++,p++);
+
+	return i;
+}
+
+static int append(struct String *str, char *str_to_appen)
+{
+	if(!str_to_appen) return -1;
+
+	size_t nl = string_length(str_to_appen);
+	if(str->size < DEF_STR){
+		if((str->size + nl) < DEF_STR){
+			string_copy(&str->base[str->size],str_to_appen,nl);	
+			str->size += nl;
+			return 0;
+		}
+		goto allocate_new_mem;
+	}
+
+allocate_new_mem:
+	if(str->str){
+		char *n = (char*)reask_mem(str->str,str->size,(str->size + nl) * sizeof(char));
+		if(!n){
+			fprintf(stderr,"reask_mem() failed, %s:%d\n",__FILE__,__LINE__-2);	
+			return -1;
+		}
+		str->str = n;
+		string_copy(&str->str[str->size],str_to_appen,nl);
+			
+		str->size += nl;
+		return 0;
+	}
+
+	str->str = (char*)ask_mem((str->size + nl) * sizeof(char));
+	if(!str->str){
+		fprintf(stderr,"ask_mem failed, %s:%d\n",__FILE__,__LINE__-2);	
+		return -1;
+	}
+
+	string_copy(str->str,str->base,str->size);
+	string_copy(&str->str[str->size],str_to_appen,nl);
+	set_memory(str->base,0,DEF_STR);
+
+	str->size += nl;
+
+	return 0;
+}
+
+static uint8_t empty(struct String *str)
+{
+	if(str->str) return *str->str == '\0';
+	return str->base[0] == '\0';
+}
+
+static void free_str(struct String *str)
+{
+	if(str->str){
+		cancel_memory(0x0,str->str,str->size);
+		str->size = 0;
+		return;
+	}	
+
+	set_memory(str->base,0,DEF_STR);
+	str->size = 0;
+}
+
+
+size_t sys_write(int fd, void *buffer, size_t size)
+{
+	long r;
+	asm volatile("syscall" 
+			:"=a"(r)
+			:"a"(1), "D"(fd), "S"(buffer), "d"(size)
+			:"rcx","r11","memory");
+
+}
