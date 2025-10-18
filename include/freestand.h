@@ -65,6 +65,7 @@ typedef 	long long		process_id; /*PROCESS ID*/
 
 #elif defined(__APPLE__)
 typedef 	unsigned char	uint8_t;
+typedef 	unsigned long 	size_t;
 #endif
 
 
