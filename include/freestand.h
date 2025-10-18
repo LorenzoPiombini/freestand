@@ -1,6 +1,13 @@
 #ifndef _FREESTAND_H
 #define _FREESTAND_H
 
+/*SYSTEM CALLS*/
+#if defined(__x86_64__)
+	#define SYS_WRITE 1
+#elif defined(__aarch64__)
+	#define SYS_WRITE 4 
+#endif
+
 /* I/O */
 #if defined(__linux__)
 #define std_out 1
@@ -10,6 +17,7 @@
 #endif
 
 /* TYPES */ 
+#if defined(__linux__)
 typedef 	char			int8_t;
 typedef 	unsigned char	uint8_t;
 typedef 	unsigned short	uint16_t;
@@ -19,8 +27,8 @@ typedef 	int				int32_t;
 typedef 	unsigned long	uint64_t;
 typedef 	long			int64_t;
 typedef 	unsigned long 	size_t;
-typedef		long int		file_offset;
-typedef 	long long		process_id;
+typedef		long int		file_offset; /*OFFSET*/
+typedef 	long long		process_id; /*PROCESS ID*/
 
 /*signed short max and min*/
 #  define SHRT_MIN	(-32768)
@@ -55,6 +63,12 @@ typedef 	long long		process_id;
 #   define ULONG_MAX	4294967295UL
 #  endif
 
+#elif defined(__APPLE__)
+typedef 	unsigned char	uint8_t;
+#endif
+
+
+
 #define DEF_STR 1024
 
 struct String{
@@ -76,5 +90,5 @@ void set_memory(void *ptr,int value, size_t size);
 /* memcpy alias */
 int copy_memory(void *dest, void* src, size_t size);
 
-size_t sys_write(int fd, void *buffer, size_t size);
+long sys_write(int fd, void *buffer, size_t size);
 #endif

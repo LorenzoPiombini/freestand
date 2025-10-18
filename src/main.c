@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include <memory.h>
+#include "memory.h"
 #include <freestand.h>
 
 int main(void)
@@ -14,7 +14,7 @@ int main(void)
 	struct arena a;
 	set_memory(&a,0,sizeof(struct arena));
 
-	a.p = get_arena(NULL);
+	a.p = get_arena(200);
 	a.size = 200;
 
 	char *m = &((char*)a.p)[a.bwritten];
@@ -38,6 +38,6 @@ int main(void)
 	copy_memory(&((char*)a.p)[a.bwritten],buffer,string_length(buffer));
 	a.bwritten += string_length(buffer);
 	set_memory(m,0,10);
-	printf("%s",s);
+	printf("%s\n",s);
 	return 0;
 }

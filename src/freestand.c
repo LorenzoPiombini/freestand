@@ -61,6 +61,7 @@ void set_memory(void *ptr,int value, size_t size)
 	}
 }
 
+/*memcpy*/
 int copy_memory(void *dest, void *src, size_t size)
 {
 	int word = 1;
@@ -118,10 +119,7 @@ int copy_memory(void *dest, void *src, size_t size)
 int init(struct String *str,char *val)
 {
 	if(!str) return -1;
-	if(str->base[0] != '\0' || str->str){
-		fprintf(stderr,"string has been already initialized\n");
-		return -1;
-	}
+	set_memory(str,0,sizeof(struct String));
 	
 	if(!val){
 		set_memory(str->base,0,DEF_STR);
@@ -221,7 +219,6 @@ allocate_new_mem:
 
 	return 0;
 }
-
 static uint8_t empty(struct String *str)
 {
 	if(str->str) return *str->str == '\0';
@@ -241,12 +238,27 @@ static void free_str(struct String *str)
 }
 
 
-size_t sys_write(int fd, void *buffer, size_t size)
+long sys_write(int fd, void *buffer, size_t size)
 {
+#if defined(__x86_64)
 	long r;
-	asm volatile("syscall" 
+	__asm__ volatile ("syscall" 
 			:"=a"(r)
-			:"a"(1), "D"(fd), "S"(buffer), "d"(size)
+			:"a"(SYS_WRITE), "D"(fd), "S"(buffer), "d"(size)
 			:"rcx","r11","memory");
+	return r;
+#elif defined(__aarch64__)
+	long ret = 0;
+	register long x8 __asm__("x8") = 64;
+	register long x0 __asm__("x0") = fd;
+	register void *x1 __asm__("x1") = buffer;
+	register unsigned long x2 __asm__("x2") = size;
+	__asm__ volatile ("svc 0"
+			:"+r"(x0)
+			:"r"(x1), "r"(x2), "r"(x8)
+			:"memory");
+	ret = x0;
+	return ret;
+#endif
 
 }
