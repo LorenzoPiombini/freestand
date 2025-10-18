@@ -90,5 +90,16 @@ void set_memory(void *ptr,int value, size_t size);
 /* memcpy alias */
 int copy_memory(void *dest, void* src, size_t size);
 
+/*conversions */
+int long_to_string(long n, char *buff);
+
+
+/*helpers*/
+size_t number_of_digit(long n);
+
+/*SYS CALLS*/
 long sys_write(int fd, void *buffer, size_t size);
+
+/*print to screen*/
+void display_to_stdout(char *format_str,...);
 #endif

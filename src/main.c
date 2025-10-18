@@ -1,20 +1,19 @@
-#include <stdio.h>
 #include "memory.h"
 #include <freestand.h>
 
 int main(void)
 {
 	char mem[32];
-	set_memory(mem,0x06,32);
+	set_memory(mem,0,32);
 
 	string_copy(mem,"hey! did you like venice?",string_length("hey! did you like venice?"));
 	if(create_arena(200) == -1) return -1;
 	
-	sys_write(1,mem,string_length("hey! did you like venice?"));
+	display_to_stdout("%s\n",mem);
 	struct arena a;
 	set_memory(&a,0,sizeof(struct arena));
 
-	a.p = get_arena(200);
+	a.p = get_arena(0x0);
 	a.size = 200;
 
 	char *m = &((char*)a.p)[a.bwritten];
@@ -38,6 +37,6 @@ int main(void)
 	copy_memory(&((char*)a.p)[a.bwritten],buffer,string_length(buffer));
 	a.bwritten += string_length(buffer);
 	set_memory(m,0,10);
-	printf("%s\n",s);
+	display_to_stdout("%s\n",s);
 	return 0;
 }

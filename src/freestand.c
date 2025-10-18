@@ -1,4 +1,4 @@
-#include <stdio.h> /*temporary*/
+#include <stdarg.h>
 #include "freestand.h"
 #include "memory.h"
 
@@ -139,7 +139,7 @@ int init(struct String *str,char *val)
 	if(str->size >= DEF_STR){
 		str->str = (char*)ask_mem((str->size)*sizeof(char));
 		if(!str->str){
-			fprintf(stderr,"ask_mem failed, %s:%d\n",__FILE__,__LINE__-2);	
+			display_to_stdout("ask_mem failed, %s:%d\n",__FILE__,__LINE__-2);	
 			return -1;
 		}
 
@@ -195,7 +195,7 @@ allocate_new_mem:
 	if(str->str){
 		char *n = (char*)reask_mem(str->str,str->size,(str->size + nl) * sizeof(char));
 		if(!n){
-			fprintf(stderr,"reask_mem() failed, %s:%d\n",__FILE__,__LINE__-2);	
+			display_to_stdout("reask_mem() failed, %s:%d\n",__FILE__,__LINE__-2);	
 			return -1;
 		}
 		str->str = n;
@@ -207,7 +207,7 @@ allocate_new_mem:
 
 	str->str = (char*)ask_mem((str->size + nl) * sizeof(char));
 	if(!str->str){
-		fprintf(stderr,"ask_mem failed, %s:%d\n",__FILE__,__LINE__-2);	
+		display_to_stdout("ask_mem failed, %s:%d\n",__FILE__,__LINE__-2);	
 		return -1;
 	}
 
@@ -237,6 +237,43 @@ static void free_str(struct String *str)
 	str->size = 0;
 }
 
+size_t number_of_digit(long n)
+{
+	if (n < 10)
+	{
+		return 1;
+	}
+	else if (n >= 10 && n < 100)
+	{
+		return 2;
+	}
+	else if (n >= 100 && n < 1000)
+	{
+		return 3;
+	}
+	else if (n >= 1000 && n < 10000)
+	{
+		return 4;
+	}
+	else if (n >= 10000 && n < 100000)
+	{
+		return 5;
+	}
+	else if (n >= 100000 && n < 1000000)
+	{
+		return 6;
+	}
+	else if (n >= 1000000 && n < 1000000000)
+	{
+		return 7;
+	}
+	else if (n >= 1000000000)
+	{
+		return 10;
+	}
+
+	return -1;
+}
 
 long sys_write(int fd, void *buffer, size_t size)
 {
@@ -260,5 +297,104 @@ long sys_write(int fd, void *buffer, size_t size)
 	ret = x0;
 	return ret;
 #endif
+}
 
+int long_to_string(long n, char *buff){
+	
+	int pos = 0;
+	if(n < 0){
+		pos++;
+		buff[0] = '-';
+		n *= -1;
+	}
+	pos += number_of_digit(n)-1;
+	if(n == 0){
+		buff[pos] = (char)(n + (int)'0');
+	}
+	while(n > 0){
+		int m = n % 10;
+		if(pos >= 0)
+			buff[pos] = (char)(m + (int)'0');
+
+		n /= 10;	
+		pos--;
+	}
+	return 0;
+}
+
+/*printf alike*/
+void display_to_stdout(char *format_str,...)
+{
+	va_list first,second;
+	va_start(first,format_str);
+	va_start(second,format_str);
+	
+	char *p = format_str;
+	/*count byte for buffer*/
+
+	long count = 0, i;
+	/*in the loop i counts the bytes needed exept the format specifiers*/
+	for(i = 0; *p != '\0';i++,p++){
+		if(*p == '%'){
+			p++;
+			switch(*p){
+			case 's':
+			{
+				char *s = va_arg(first,char*);
+				count += string_length(s);
+				if (i > 0)i -= 1;
+				break;				
+			}
+			case 'd':
+			{
+				
+				char n_buff[100];
+				set_memory(n_buff,0,100);
+				long n = (long) va_arg(first,int);	
+				long_to_string(n,n_buff);
+				count += string_length(n_buff);
+				if (i > 0)i -= 1;
+				break;
+			}
+			default:
+				break;
+			}
+		}
+	}	
+	
+	va_end(first);
+	long buffer_bytes = i + count + 1;
+	char buff[buffer_bytes];
+	set_memory(buff,0,buffer_bytes);
+	
+	for(i = 0; *format_str != '\0';i++,format_str++){
+		if(*format_str == '%'){
+			format_str++;		
+			switch(*format_str){
+			case 's':
+			{
+				char *s = (char *)va_arg(second,char *);
+				copy_memory(&buff[i],s,string_length(s));
+				i += string_length(s);
+				continue;
+			}
+			case 'd':
+			{
+				char n_buff[100];
+				set_memory(n_buff,0,100);
+				long n = (long) va_arg(second,int);	
+				long_to_string(n,n_buff);
+				copy_memory(&buff[i],n_buff,string_length(n_buff));
+				i += string_length(n_buff);
+				continue;
+			}
+			default:
+			break;
+			}
+		}
+		buff[i] = *format_str;
+	}
+
+	sys_write(1,buff,buffer_bytes-1);
+	va_end(second);
 }
