@@ -249,13 +249,13 @@ long sys_write(int fd, void *buffer, size_t size)
 	return r;
 #elif defined(__aarch64__)
 	long ret = 0;
-	register long x8 __asm__("x8") = 64;
+	register long x16 __asm__("x16") = 0x2000004;
 	register long x0 __asm__("x0") = fd;
 	register void *x1 __asm__("x1") = buffer;
 	register unsigned long x2 __asm__("x2") = size;
-	__asm__ volatile ("svc 0"
+	__asm__ volatile ("svc #0x80"
 			:"+r"(x0)
-			:"r"(x1), "r"(x2), "r"(x8)
+			:"r"(x1), "r"(x2), "r"(x16)
 			:"memory");
 	ret = x0;
 	return ret;
