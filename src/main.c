@@ -11,8 +11,12 @@ int main(void)
 	string_copy(mem,"hey! did you like venice?",string_length("hey! did you like venice?"));
 	if(create_arena(200) == -1) sys_exit(-1);
 	
-	int d,b,c;
-	if(extract_numbers_from_string("09-09-09",8,"%s-%d-%d",&d,&b,&c) == -1)sys_exit(-1);
+
+	if(string_compare(mem,p,string_length(p)) == 0)
+		display_to_stdout("string '%s' and string '%s' are =\n",mem,p);
+	else
+		display_to_stdout("string '%s' and string '%s' are not =\n",mem,p);
+
 
 	if(!find_needle(mem,p)) 
 		display_to_stdout("%s not found in %s\n",p,mem);

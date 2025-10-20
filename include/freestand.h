@@ -43,7 +43,7 @@ struct String{
 	char *str;	
 	size_t size;
 	int (*append)(struct String*,char *);
-	uint8_t (*is_empty)(struct String*);
+	i8 (*is_empty)(struct String*);
 	void (*close)(struct String*);
 };
 
@@ -52,6 +52,7 @@ void string_copy(char *dest, char *src, size_t size);
 size_t string_length(char *str);
 char *find_needle(char *haystack,char *needle);				/*strstr*/
 int extract_numbers_from_string(char *buff,size_t size,char *format,...);	/*sscanf*/
+int string_compare(char *src, char *dest, size_t size); /*strncmp*/
 
 /* memset alias */
 void set_memory(void *ptr,int value, size_t size);
@@ -63,6 +64,8 @@ int copy_memory(void *dest, void* src, size_t size);
 int long_to_string(long n, char *buff);
 int copy_to_string(char *buff,size_t size,char *format,...); /*snprintf*/
 int double_to_string(double d, char *buff);
+long string_to_long(char *str);
+double string_to_double(char *str);
 
 
 /*helpers*/
@@ -81,6 +84,6 @@ int is_space(int c);
 int is_alpha(int c);
 
 /*math.h style func */
-uint32_t power(uint32_t n, int pow);
+ui32 power(ui32 n, int pow);
 #endif
 

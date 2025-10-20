@@ -4,7 +4,7 @@
 
 /*static functions to manage String struct*/
 static void free_str(struct String *str);
-static uint8_t empty(struct String *str);
+static i8 empty(struct String *str);
 static int append(struct String *str,char *str_to_appen);
 
 void set_memory(void *ptr,int value, size_t size)
@@ -219,7 +219,7 @@ allocate_new_mem:
 
 	return 0;
 }
-static uint8_t empty(struct String *str)
+static i8 empty(struct String *str)
 {
 	if(str->str) return *str->str == '\0';
 	return str->base[0] == '\0';
@@ -433,6 +433,7 @@ void display_to_stdout(char *format_str,...)
 	/*count byte for buffer*/
 
 	long count = 0, i;
+	long spec = 0;
 	/*in the loop i counts the bytes needed exept the format specifiers*/
 	for(i = 0; *p != '\0';i++,p++){
 		if(*p == '%'){
@@ -442,7 +443,7 @@ void display_to_stdout(char *format_str,...)
 			{
 				char *s = va_arg(first,char*);
 				count += string_length(s);
-				if (i > 0)i -= 1;
+				spec++;
 				break;				
 			}
 			case 'd':
@@ -453,7 +454,7 @@ void display_to_stdout(char *format_str,...)
 				long n = (long) va_arg(first,int);	
 				long_to_string(n,n_buff);
 				count += string_length(n_buff);
-				if (i > 0)i -= 1;
+				spec++;
 				break;
 			}
 			default:
@@ -463,18 +464,18 @@ void display_to_stdout(char *format_str,...)
 	}	
 	
 	va_end(first);
-	long buffer_bytes = i + count + 1;
+	long buffer_bytes = string_length(format_str) - (spec*2) + count + 1;
 	char buff[buffer_bytes];
 	set_memory(buff,0,buffer_bytes);
 	
-	for(i = 0; *format_str != '\0';i++,format_str++){
+	for(i = 0; *format_str != '\0';format_str++){
 		if(*format_str == '%'){
 			format_str++;		
 			switch(*format_str){
 			case 's':
 			{
 				char *s = (char *)va_arg(second,char *);
-				copy_memory(&buff[i],s,string_length(s));
+				string_copy(&buff[i],s,string_length(s));
 				i += string_length(s);
 				continue;
 			}
@@ -484,7 +485,7 @@ void display_to_stdout(char *format_str,...)
 				set_memory(n_buff,0,100);
 				long n = (long) va_arg(second,int);	
 				long_to_string(n,n_buff);
-				copy_memory(&buff[i],n_buff,string_length(n_buff));
+				string_copy(&buff[i],n_buff,string_length(n_buff));
 				i += string_length(n_buff);
 				continue;
 			}
@@ -493,6 +494,7 @@ void display_to_stdout(char *format_str,...)
 			}
 		}
 		buff[i] = *format_str;
+		i++;
 	}
 
 	sys_write(1,buff,buffer_bytes-1);
@@ -624,7 +626,7 @@ int extract_numbers_from_string(char *buff,size_t size,char *format,...)
 	va_list list;
 	va_start(list,format);
 	size_t i;
-	uint8_t is_long = 0;
+	i8 is_long = 0;
 	for(i = 0; *format != '\0'; format++){
 		if(*format == '%'){
 			format++;
@@ -735,9 +737,9 @@ int is_digit(int c)
 	return c >= 0x30 && c <= 0x39;
 }
 
-uint32_t power(uint32_t n, int pow)
+ui32 power(ui32 n, int pow)
 {
-	uint32_t a = n;
+	ui32 a = n;
 	if(pow == 0) return 1;
 	
 	int i;
@@ -775,4 +777,18 @@ char *find_needle(char *haystack,char *needle)
 	}
 
 	return 0x0;
+}
+
+int string_compare(char *src, char *dest, size_t size){
+
+	size_t src_l = string_length(src);
+	size_t dest_l = string_length(dest);
+	if(src_l != dest_l) return 1;
+	if(src_l != size || dest_l != size) return 1;
+
+	size_t i;
+	for(i = 0;i < size; i++)
+		if(src[i] != dest[i]) return 1;
+
+	return 0;
 }
