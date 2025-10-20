@@ -3,13 +3,23 @@
 
 int main(void)
 {
+
+	char *p = "this is my name";
 	char mem[32];
 	set_memory(mem,0,32);
 
 	string_copy(mem,"hey! did you like venice?",string_length("hey! did you like venice?"));
 	if(create_arena(200) == -1) sys_exit(-1);
 	
-	display_to_stdout("%s\n",mem);
+	int d,b,c;
+	if(extract_numbers_from_string("09-09-09",8,"%s-%d-%d",&d,&b,&c) == -1)sys_exit(-1);
+
+	if(!find_needle(mem,p)) 
+		display_to_stdout("%s not found in %s\n",p,mem);
+	else
+		display_to_stdout("%s found in %s\n",p,mem);
+
+
 	struct arena a;
 	set_memory(&a,0,sizeof(struct arena));
 

@@ -50,6 +50,8 @@ struct String{
 int init(struct String *str,char *val);
 void string_copy(char *dest, char *src, size_t size);
 size_t string_length(char *str);
+char *find_needle(char *haystack,char *needle);				/*strstr*/
+int extract_numbers_from_string(char *buff,size_t size,char *format,...);	/*sscanf*/
 
 /* memset alias */
 void set_memory(void *ptr,int value, size_t size);

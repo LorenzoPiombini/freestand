@@ -613,6 +613,113 @@ int copy_to_string(char *buff,size_t size,char *format,...)
 	va_end(list);
 	return 0;
 }
+/*sscanf*/
+int extract_numbers_from_string(char *buff,size_t size,char *format,...)
+{
+	if(find_needle(format,"%s")){
+		display_to_stdout("invalid format string, unexpected '%%s'\nformat specifier acceptted %%ld %%d %%u\n");	
+		return -1;
+	}
+
+	va_list list;
+	va_start(list,format);
+	size_t i;
+	uint8_t is_long = 0;
+	for(i = 0; *format != '\0'; format++){
+		if(*format == '%'){
+			format++;
+			if(*format == '\0')break;
+			for(;;){
+				switch(*format){
+				case 's':
+					va_end(list);
+					return -1;
+				case 'l':
+					format++;
+					is_long = 1;
+					continue;
+				case 'd':
+					char number[15];
+					set_memory(number,0,15);
+					int j = 0;
+				
+					if(is_digit(buff[i])){
+						while(is_digit(buff[i])){
+							if(j < 15){
+								number[j] = buff[i];
+								j++;
+							}else{
+								va_end(list);
+								display_to_stdout(
+									"number is too large: %s, has more than 15 digit\n",
+									number);
+								return -1;
+							}
+							i++;
+							
+							if( i >= size){
+								va_end(list);
+								return -1;
+							}
+						}		
+					}else{
+
+						while(!is_digit(buff[i])){
+							i++;
+							if(i > size){
+								va_end(list);
+								return -1;
+							}
+						}
+
+						while(is_digit(buff[i])){
+							if(j < 15){
+								number[j] = buff[i];
+								j++;
+							}else{
+								va_end(list);
+								display_to_stdout(
+									"number is too large: %s, has more than 15 digit\n",
+									number);
+								return -1;
+							}
+							i++;
+							
+							if(i > size){
+								va_end(list);
+								return -1;
+							}
+						}
+					}
+					long l = string_to_long(number);
+					if(l == INVALID_VALUE){
+						va_end(list);
+						display_to_stdout("string to number conversion failed, %s,%d.\n",
+								__FILE__,__LINE__-4);
+						return -1;
+					}
+
+					if(is_long){
+						long *n = va_arg(list,long*);
+						*n = l;
+					}else{
+						int *n = va_arg(list,int*);
+						*n = l;
+					}
+					break;
+				default:
+					break;
+				}
+				format++;
+				break;
+			}
+		}
+
+		if(*format == '\0') break;
+	}
+	va_end(list);
+	return 0;
+}
 
 int is_space(int c)
 {
@@ -642,3 +749,30 @@ uint32_t power(uint32_t n, int pow)
 }
 
 
+char *find_needle(char *haystack,char *needle)
+{
+	
+	char *p = &needle[0];
+	int b = 0;
+	int i;
+	for(i = 0; haystack[i] != '\0';i++){
+		char *h = &haystack[i];
+		for(;*p != '\0';p++){
+			if(*p != *h){
+				p = &needle[0];
+				b = 1;
+				break;
+			}
+			h++;
+		}
+
+		if(b){
+			b = 0;
+			continue;
+		}
+
+		return &haystack[i];		
+	}
+
+	return 0x0;
+}
