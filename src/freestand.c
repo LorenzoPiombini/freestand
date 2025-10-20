@@ -131,7 +131,7 @@ int init(struct String *str,char *val)
 		return 0;
 	}
 
-	int i;
+	size_t i;
 	char *p = val;
 	for(i = 0; *p != '\0'; i++,p++);
 
@@ -163,7 +163,7 @@ int init(struct String *str,char *val)
 
 void string_copy(char *dest, char *src, size_t size)
 {
-	int i;
+	size_t i;
 	for(i = 0; i < size;i++)
 		dest[i] = src[i];
 }
@@ -299,6 +299,45 @@ long sys_write(int fd, void *buffer, size_t size)
 #endif
 }
 
+void sys_exit(long exit_code)
+{
+	__asm__ volatile("movq %0, %%rdi\n"
+				     "movq %1, %%rax\n"	
+					 "syscall\n" 
+						:
+						:"r"(exit_code), "i"(SYS_EXIT)
+						:"rax","rdi","memory");
+}
+
+int double_to_string(double d, char *buff){
+	
+	long integer = (long)d;
+	double fraction = d - (double)integer;
+
+	long_to_string(integer,buff);
+
+	buff[string_length(buff)] = '.';
+
+	if (d < 0){
+		fraction *= -1;
+		integer *= -1;
+	}
+
+	int i;
+	int j = string_length(buff);
+	int zeros_after_point = 15;
+	if(d < 0) zeros_after_point -= 1;
+
+	for(i = 0; i < zeros_after_point; i++){
+		fraction *= 10;
+		buff[j] =  ((int)fraction + '0');
+		fraction = (double)(fraction - (int)fraction);
+		j++;
+	}
+
+	return 0;
+}
+
 int long_to_string(long n, char *buff){
 	
 	int pos = 0;
@@ -320,6 +359,67 @@ int long_to_string(long n, char *buff){
 		pos--;
 	}
 	return 0;
+}
+
+long string_to_long(char *str)
+{
+	size_t l = string_length(str);
+	if(is_space(str[l-1])){
+		str[l-1] = '\0';
+		l--;
+	}
+
+	int at_the_power_of = l - 1;	
+	long converted = 0;
+	int negative = 0;
+	for(; *str != '\0';str++){
+		if(*str == '-'){
+			at_the_power_of--;
+			negative = 1;
+			continue;
+		}
+
+		if(is_alpha(*str)) return INVALID_VALUE;
+
+
+		long n = (long)*str - '0';
+		if(at_the_power_of >= 0)
+			converted += (long)((int)power(10.00,at_the_power_of))*n;
+		at_the_power_of--;
+	}
+
+	return negative == 0 ? converted : converted * (-1);
+}
+double string_to_double(char *str)
+{
+	int comma = 0;
+	int position = 0;
+	char num_buff[30];
+	set_memory(num_buff,0,30);
+
+	int i;
+	for(i = 0; *str != '\0';str++){
+		if (i == 30) break;
+		if(*str == '.') {
+			comma = 1;
+			continue;
+		}
+
+		if(is_alpha(*str))return INVALID_VALUE;
+
+		if(i < 30)
+			num_buff[i] = *str;
+
+		if(comma) position++;
+		i++;
+	}
+
+	long l = string_to_long(num_buff);
+	if(comma){
+		return ((double)l / power(10,position));
+	}else{
+		return (double) l;
+	}
 }
 
 /*printf alike*/
@@ -398,3 +498,147 @@ void display_to_stdout(char *format_str,...)
 	sys_write(1,buff,buffer_bytes-1);
 	va_end(second);
 }
+
+int copy_to_string(char *buff,size_t size,char *format,...)
+{
+	if(string_length(format) > size){
+		display_to_stdout("buffer is not big enough %s:%d.\n",__FILE__,__LINE__);
+		return -1;
+	}
+
+	va_list list; 
+	long l = 0;
+	char *string = 0x0;
+	int precision = 0;
+	double d = 0;
+
+	va_start(list,format);
+	size_t j;
+	for(j = 0; *format != '\0';format++){
+		if(*format == '%'){
+			format++;
+			
+			for(;;){
+				switch(*format){
+				case 's':
+				{
+					string = va_arg(list,char*);
+					for(; *string != '\0'; string++){
+						if(j < size)
+							buff[j] = *string;
+						j++;
+					}
+					break;
+				}
+				case 'l':
+					format++;
+					continue;
+				case 'u':
+				case 'd':
+				{
+					l = va_arg(list,int);
+					size_t sz = number_of_digit(l);
+					char num_str[sz+1];
+					set_memory(num_str,0,sz+1);
+					long_to_string(l,num_str);	
+					int i;
+					for(i = 0; num_str[i] != '\0'; i++){
+						if(j < size)
+							buff[j] = num_str[i];
+						j++;
+					}
+					break;
+				}
+				case 'f':
+				{
+					d = va_arg(list,double);
+					
+					size_t sz = number_of_digit(d < 0 ? (int)d * -1 : (int)d);
+					/* 1 for the sign 15 digits after the . ,the . and '\0'  at the end*/
+					char num_str[sz+18];
+					set_memory(num_str,0,sz+18);
+					double_to_string(d,num_str);	
+					int i,pc,com;
+					for(i = 0, pc = 0, com = 0; num_str[i] != '\0'; i++){
+						if(precision == pc){
+							if(((int)num_str[i] - '0') > 5){
+								if(((int)buff[j-1] - '0') == 9){
+									buff[j-1] = '0';
+								}else{
+									int n = buff[j-1] - '0';
+									buff[j-1] = (char)++n + '0';
+								}
+							}
+							break;
+						}
+						if(com) pc++;
+						if(num_str[i] == '.') com = 1;
+
+						if(j < size)
+							buff[j] = num_str[i];
+						j++;
+					}
+					break;
+				}
+				case '.':
+				{
+					char num[4];
+					set_memory(num,0,4);
+					int k = 0;
+					while(is_digit(*(++format))){
+						num[k] = *format;	
+						k++;
+					}	
+
+					precision = string_to_long(num);
+					if(precision == INVALID_VALUE){
+						va_end(list);
+						return -1;
+					}
+
+					continue;
+				}
+				default:
+					break;
+				}
+				format++;
+				break;
+			}
+		}	
+		if(*format == '\0') break;
+		if(j < size)
+			buff[j] = *format;
+		j++;
+	}
+	va_end(list);
+	return 0;
+}
+
+int is_space(int c)
+{
+	return c == 0x0b || c == 0x09 || c == 0x0a || c == 0x0c || c == 0x0d || c == 0x20;
+}
+
+int is_alpha(int c)
+{
+	return (c >= 0x41 && c <= 0x5a) || (c >= 0x61 && c <= 0x7a);
+}
+int is_digit(int c)
+{
+	return c >= 0x30 && c <= 0x39;
+}
+
+uint32_t power(uint32_t n, int pow)
+{
+	uint32_t a = n;
+	if(pow == 0) return 1;
+	
+	int i;
+	for(i = 1; i < pow; i++){
+		a *= n;
+	}
+
+	return a;
+}
+
+
