@@ -7,6 +7,7 @@ static void free_str(struct String *str);
 static i8 empty(struct String *str);
 static int append(struct String *str,char *str_to_appen);
 
+i64 error_value = 0;
 void set_memory(void *ptr,int value, size_t size)
 {
 	int word = 1;
@@ -168,10 +169,10 @@ void string_copy(char *dest, char *src, size_t size)
 		dest[i] = src[i];
 }
 
-size_t string_length(char *str)
+size_t string_length(const char *str)
 {
 	size_t i;
-	char *p = str;
+	char *p = (char*)str;
 	for(i = 0; *p != '\0'; i++,p++);
 
 	return i;
@@ -379,7 +380,10 @@ long string_to_long(char *str)
 			continue;
 		}
 
-		if(is_alpha(*str)) return INVALID_VALUE;
+		if(is_alpha(*str)) {
+			error_value = INVALID_VALUE;
+			return -1;
+		}
 
 
 		long n = (long)*str - '0';
@@ -405,7 +409,10 @@ double string_to_double(char *str)
 			continue;
 		}
 
-		if(is_alpha(*str))return INVALID_VALUE;
+		if(is_alpha(*str)){
+			error_value = INVALID_VALUE;
+			return -1;
+		}
 
 		if(i < 30)
 			num_buff[i] = *str;
@@ -593,7 +600,7 @@ int copy_to_string(char *buff,size_t size,char *format,...)
 					}	
 
 					precision = string_to_long(num);
-					if(precision == INVALID_VALUE){
+					if(error_value == INVALID_VALUE){
 						va_end(list);
 						return -1;
 					}
@@ -694,7 +701,7 @@ int extract_numbers_from_string(char *buff,size_t size,char *format,...)
 						}
 					}
 					long l = string_to_long(number);
-					if(l == INVALID_VALUE){
+					if(error_value == INVALID_VALUE){
 						va_end(list);
 						display_to_stdout("string to number conversion failed, %s,%d.\n",
 								__FILE__,__LINE__-4);
@@ -721,6 +728,15 @@ int extract_numbers_from_string(char *buff,size_t size,char *format,...)
 	}
 	va_end(list);
 	return 0;
+}
+
+int is_punct(int c)
+{
+	if(is_space(c)) return 0;
+	if(is_digit(c)) return 0;
+	if(is_alpha(c)) return 0;
+
+	return c >= 0x20 && c <= 0x7e;
 }
 
 int is_space(int c)
@@ -751,17 +767,17 @@ ui32 power(ui32 n, int pow)
 }
 
 
-char *find_needle(char *haystack,char *needle)
+char *find_needle(const char *haystack,const char *needle)
 {
 	
-	char *p = &needle[0];
+	const char *hay = &haystack[0];
 	int b = 0;
 	int i;
-	for(i = 0; haystack[i] != '\0';i++){
-		char *h = &haystack[i];
+	for(i = 0; hay[i] != '\0';i++){
+		const char *h = &hay[i];
+		const char *p = &needle[0];
 		for(;*p != '\0';p++){
 			if(*p != *h){
-				p = &needle[0];
 				b = 1;
 				break;
 			}
@@ -773,7 +789,7 @@ char *find_needle(char *haystack,char *needle)
 			continue;
 		}
 
-		return &haystack[i];		
+		return (char *)&haystack[i];		
 	}
 
 	return 0x0;

@@ -32,7 +32,8 @@
 #endif
 
 
-/*ERRNOs*/
+/*ERRNOs alike definitions*/
+extern i64 error_value;
 
 #define INVALID_VALUE 22 /*EINVAL*/
 
@@ -49,8 +50,8 @@ struct String{
 
 int init(struct String *str,char *val);
 void string_copy(char *dest, char *src, size_t size);
-size_t string_length(char *str);
-char *find_needle(char *haystack,char *needle);				/*strstr*/
+size_t string_length(const char *str);
+char *find_needle(const char *haystack,const char *needle);				/*strstr*/
 int extract_numbers_from_string(char *buff,size_t size,char *format,...);	/*sscanf*/
 int string_compare(char *src, char *dest, size_t size); /*strncmp*/
 
@@ -82,6 +83,7 @@ void display_to_stdout(char *format_str,...);
 int is_digit(int c);
 int is_space(int c);
 int is_alpha(int c);
+int is_punct(int c);
 
 /*math.h style func */
 ui32 power(ui32 n, int pow);
