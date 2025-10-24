@@ -4,6 +4,10 @@
 int main(void)
 {
 
+	char *example = "this is an example\n";
+	int rt = complementary_span(example,"\n");
+	display_to_stdout("%d\n",rt);
+
 	char *p = "this is my name";
 	char mem[32];
 	set_memory(mem,0,32);

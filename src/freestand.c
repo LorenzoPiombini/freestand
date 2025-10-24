@@ -52,7 +52,7 @@ void set_memory(void *ptr,int value, size_t size)
 	case 8:
 	{
 		p_long = (long *)ptr; 
-		long iw = (long)( (long)v << 56 | (long)v << 48 | (long)v << 32 | v << 24 | v << 16 | v << 8 | v);
+		long iw = (long)( (long)v << 56 | (long)v << 48 | (long)v << 40 | (long)v << 32 | v << 24 | v << 16 | v << 8 | v);
 		size_t i;
 		for(i = 0; i < (size / word);*p_long = iw, i++, p_long++);	
 		break;
@@ -795,6 +795,13 @@ char *find_needle(const char *haystack,const char *needle)
 	return 0x0;
 }
 
+int complementary_span(const char *s, const char *reject){
+	
+	char *f = find_needle(s,reject);
+	if(!f) return -1;
+
+	return (int)((unsigned char*)f -(unsigned char*)s);
+}
 int string_compare(char *src, char *dest, size_t size){
 
 	size_t src_l = string_length(src);

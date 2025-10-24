@@ -54,6 +54,7 @@ size_t string_length(const char *str);
 char *find_needle(const char *haystack,const char *needle);				/*strstr*/
 int extract_numbers_from_string(char *buff,size_t size,char *format,...);	/*sscanf*/
 int string_compare(char *src, char *dest, size_t size); /*strncmp*/
+int complementary_span(const char *s, const char *reject);
 
 /* memset alias */
 void set_memory(void *ptr,int value, size_t size);
