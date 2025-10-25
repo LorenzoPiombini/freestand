@@ -37,10 +37,8 @@ extern i64 error_value;
 
 #define INVALID_VALUE 22 /*EINVAL*/
 
-#define DEF_STR 1024
 
 struct String{
-	char base[DEF_STR];
 	char *str;	
 	size_t size;
 	int (*append)(struct String*,char *);

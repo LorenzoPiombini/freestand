@@ -123,7 +123,6 @@ int init(struct String *str,char *val)
 	set_memory(str,0,sizeof(struct String));
 	
 	if(!val){
-		set_memory(str->base,0,DEF_STR);
 		str->str = 0x0;
 		str->append = append;
 		str->is_empty = empty;
@@ -132,33 +131,26 @@ int init(struct String *str,char *val)
 		return 0;
 	}
 
+	/*compute string size*/
 	size_t i;
 	char *p = val;
 	for(i = 0; *p != '\0'; i++,p++);
 
 	str->size = i;
-	if(str->size >= DEF_STR){
-		str->str = (char*)ask_mem((str->size)*sizeof(char));
-		if(!str->str){
-			display_to_stdout("ask_mem failed, %s:%d\n",__FILE__,__LINE__-2);	
-			return -1;
-		}
-
-		set_memory(str->str,0,str->size);
-		for(i = 0; i < str->size;i++)
-			str->str[i] = val[i];
-
-		str->append = append;
-		str->is_empty = empty;
-		str->close = free_str;
-		set_memory(str->base,0,DEF_STR);
-		return 0;
+	str->str = (char*)ask_mem((str->size)*sizeof(char));
+	if(!str->str){
+		display_to_stdout("ask_mem failed, %s:%d\n",__FILE__,__LINE__-2);	
+		return -1;
 	}
+
+	set_memory(str->str,0,str->size);
 	for(i = 0; i < str->size;i++)
-		str->base[i] = val[i];
+		str->str[i] = val[i];
+
 	str->append = append;
 	str->is_empty = empty;
 	str->close = free_str;
+	set_memory(str->base,0,DEF_STR);
 	return 0;
 }
 
@@ -201,7 +193,7 @@ allocate_new_mem:
 		}
 		str->str = n;
 		string_copy(&str->str[str->size],str_to_appen,nl);
-			
+
 		str->size += nl;
 		return 0;
 	}
@@ -303,15 +295,15 @@ long sys_write(int fd, void *buffer, size_t size)
 void sys_exit(long exit_code)
 {
 	__asm__ volatile("movq %0, %%rdi\n"
-				     "movq %1, %%rax\n"	
-					 "syscall\n" 
-						:
-						:"r"(exit_code), "i"(SYS_EXIT)
-						:"rax","rdi","memory");
+			"movq %1, %%rax\n"	
+			"syscall\n" 
+			:
+			:"r"(exit_code), "i"(SYS_EXIT)
+			:"rax","rdi","memory");
 }
 
 int double_to_string(double d, char *buff){
-	
+
 	long integer = (long)d;
 	double fraction = d - (double)integer;
 
@@ -340,7 +332,7 @@ int double_to_string(double d, char *buff){
 }
 
 int long_to_string(long n, char *buff){
-	
+
 	int pos = 0;
 	if(n < 0){
 		pos++;
