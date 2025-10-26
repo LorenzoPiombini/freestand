@@ -38,15 +38,20 @@ extern i64 error_value;
 #define INVALID_VALUE 22 /*EINVAL*/
 
 
+struct Buffer{
+	void *p;
+	size_t size;
+};
+
 struct String{
 	char *str;	
 	size_t size;
 	int (*append)(struct String*,char *);
 	i8 (*is_empty)(struct String*);
-	void (*close)(struct String*);
+	int (*string_compare)(struct String *, struct String *);
 };
 
-int init(struct String *str,char *val);
+int init(struct String *str,char *val, struct Buffer *b);
 void string_copy(char *dest, char *src, size_t size);
 size_t string_length(const char *str);
 char *find_needle(const char *haystack,const char *needle);				/*strstr*/

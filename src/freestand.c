@@ -3,9 +3,9 @@
 #include "memory.h"
 
 /*static functions to manage String struct*/
-static void free_str(struct String *str);
 static i8 empty(struct String *str);
 static int append(struct String *str,char *str_to_appen);
+static int str_comp(struct String *src, struct String *dest);
 
 i64 error_value = 0;
 void set_memory(void *ptr,int value, size_t size)
@@ -117,17 +117,17 @@ int copy_memory(void *dest, void *src, size_t size)
 }
 
 /* STRING HANDLEING */
-int init(struct String *str,char *val)
+int init(struct String *str,char *val,struct Buffer *b)
 {
 	if(!str) return -1;
+	if(!b) return -1;
+
 	set_memory(str,0,sizeof(struct String));
 	
 	if(!val){
-		str->str = 0x0;
 		str->append = append;
 		str->is_empty = empty;
-		str->close = free_str;
-		str->size = 0;
+		str->string_compare = str_comp;
 		return 0;
 	}
 
@@ -136,12 +136,9 @@ int init(struct String *str,char *val)
 	char *p = val;
 	for(i = 0; *p != '\0'; i++,p++);
 
+	if(i != b->size) return -1;
 	str->size = i;
-	str->str = (char*)ask_mem((str->size)*sizeof(char));
-	if(!str->str){
-		display_to_stdout("ask_mem failed, %s:%d\n",__FILE__,__LINE__-2);	
-		return -1;
-	}
+	str->str = (char*)b->p;
 
 	set_memory(str->str,0,str->size);
 	for(i = 0; i < str->size;i++)
@@ -149,8 +146,7 @@ int init(struct String *str,char *val)
 
 	str->append = append;
 	str->is_empty = empty;
-	str->close = free_str;
-	set_memory(str->base,0,DEF_STR);
+	str->string_compare = str_comp;
 	return 0;
 }
 
@@ -175,16 +171,7 @@ static int append(struct String *str, char *str_to_appen)
 	if(!str_to_appen) return -1;
 
 	size_t nl = string_length(str_to_appen);
-	if(str->size < DEF_STR){
-		if((str->size + nl) < DEF_STR){
-			string_copy(&str->base[str->size],str_to_appen,nl);	
-			str->size += nl;
-			return 0;
-		}
-		goto allocate_new_mem;
-	}
 
-allocate_new_mem:
 	if(str->str){
 		char *n = (char*)reask_mem(str->str,str->size,(str->size + nl) * sizeof(char));
 		if(!n){
@@ -204,9 +191,7 @@ allocate_new_mem:
 		return -1;
 	}
 
-	string_copy(str->str,str->base,str->size);
 	string_copy(&str->str[str->size],str_to_appen,nl);
-	set_memory(str->base,0,DEF_STR);
 
 	str->size += nl;
 
@@ -215,19 +200,7 @@ allocate_new_mem:
 static i8 empty(struct String *str)
 {
 	if(str->str) return *str->str == '\0';
-	return str->base[0] == '\0';
-}
-
-static void free_str(struct String *str)
-{
-	if(str->str){
-		cancel_memory(0x0,str->str,str->size);
-		str->size = 0;
-		return;
-	}	
-
-	set_memory(str->base,0,DEF_STR);
-	str->size = 0;
+	return 1;
 }
 
 size_t number_of_digit(long n)
@@ -438,6 +411,13 @@ void display_to_stdout(char *format_str,...)
 		if(*p == '%'){
 			p++;
 			switch(*p){
+			case 'S':
+			{
+				struct String s = va_arg(first,struct String);	
+				count += s.size;
+				spec++;
+				break;
+			}
 			case 's':
 			{
 				char *s = va_arg(first,char*);
@@ -471,6 +451,15 @@ void display_to_stdout(char *format_str,...)
 		if(*format_str == '%'){
 			format_str++;		
 			switch(*format_str){
+			case 'S':
+			{
+				struct String s = va_arg(second,struct String);
+				if(s.str){
+					string_copy(&buff[i],s.str,s.size);
+					i += s.size;
+				}
+				continue;
+			}
 			case 's':
 			{
 				char *s = (char *)va_arg(second,char *);
@@ -794,6 +783,18 @@ int complementary_span(const char *s, const char *reject){
 
 	return (int)((unsigned char*)f -(unsigned char*)s);
 }
+
+static int str_comp(struct String *src, struct String *dest)
+{
+	if(src->size != dest->size) return 1;
+
+	size_t i;
+	for(i = 0; i < src->size;i++)
+		if(src->str[i] !=  dest->str[i]) return 1;
+
+	return 0;
+}
+
 int string_compare(char *src, char *dest, size_t size){
 
 	size_t src_l = string_length(src);

@@ -4,58 +4,37 @@
 int main(void)
 {
 
-	char *example = "this is an example\n";
-	int rt = complementary_span(example,"\n");
-	display_to_stdout("%d\n",rt);
+	/*allocate memory*/
+	if(create_arena(1) == -1) sys_exit(-1);
+	struct Arena ar;
+	ar.mem.p = get_arena(0x0);
+		
+    /*STRING USAGE EXAMPLES*/
 
-	char *p = "this is my name";
-	char mem[32];
-	set_memory(mem,0,32);
+	/*you must pass a buffer to string init*/
+	struct Buffer buf = {(void*)ar.mem.p,string_length("this is a string with my library")};
+	struct String p;
+	if(init(&p,"this is a string with my library",&buf) == -1) sys_exit(-1);
 
-	string_copy(mem,"hey! did you like venice?",string_length("hey! did you like venice?"));
-	if(create_arena(200) == -1) sys_exit(-1);
 	
+	/*you can do it this way too*/
+	char *message = "i like working on strings";
+	struct String p2;
+	int l = string_length(message);	
+	char b[l];
 
-	if(string_compare(mem,p,string_length(p)) == 0)
-		display_to_stdout("string '%s' and string '%s' are =\n",mem,p);
+	buf.p = (void*)&b[0];
+	buf.size = l;
+
+	if(init(&p2,message,&buf) == -1) sys_exit(-1);
+	display_to_stdout("%S\n",p2);
+
+
+	if(p.string_compare(&p2,&p) == 0)
+		display_to_stdout("string '%S' and string '%S' are =\n",p2,p);
 	else
-		display_to_stdout("string '%s' and string '%s' are not =\n",mem,p);
+		display_to_stdout("string '%S' and string '%S' are not =\n",p2,p);
 
 
-	if(!find_needle(mem,p)) 
-		display_to_stdout("%s not found in %s\n",p,mem);
-	else
-		display_to_stdout("%s found in %s\n",p,mem);
-
-
-	struct arena a;
-	set_memory(&a,0,sizeof(struct arena));
-
-	a.p = get_arena(0x0);
-	a.size = 200;
-
-	char *m = &((char*)a.p)[a.bwritten];
-	set_memory(m,0,10);
-	a.bwritten +=  10;
-
-	char *s = &((char*)a.p)[a.bwritten];
-	set_memory(s,0,10);
-	a.bwritten +=  10;
-
-	copy_memory(m,"hey!",5);
-	copy_memory(s,m,10);
-	
-	struct arena ar;
-	copy_memory(&ar,&a,sizeof(struct arena));
-	
-	char buffer[] = "Hey what is up\n I hope you are okay cause here is a little rainy\n";
-	struct String st;
-	init(&st,buffer);
-
-	copy_memory(&((char*)a.p)[a.bwritten],buffer,string_length(buffer));
-	a.bwritten += string_length(buffer);
-	set_memory(m,0,10);
-	display_to_stdout("%s\n",s);
-	sys_exit(0);
 	return 0;
 }
